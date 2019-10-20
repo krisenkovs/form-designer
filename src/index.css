@@ -23,3 +23,32 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, "Courier New",
     monospace;
 }
+
+.designer {
+    background: linear-gradient(90deg, #fff 9px, transparent 1%) 0 0, linear-gradient(#fff 9px, transparent 1%) 0 0, #a5c5f0;
+    background-size: 10px 10px;
+}
+
+.designer-panel {
+    background: #FAFAFA;
+    border: solid 1px #CCC;
+    border-radius: 3px;
+    position: absolute;
+    left: 20px;
+    top: 20px
+}
+
+.designer-panel .item {
+    width: 26px;
+    line-height: 26px;
+    cursor: default;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    justify-content: middle;
+    align-items: center;
+}
+
+.designer-panel .item .icon>rect:hover{
+    stroke: #f9ab40;
+}
