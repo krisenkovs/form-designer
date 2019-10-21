@@ -1,7 +1,5 @@
 import React from 'react';
 
-
-
 function JumpNode(props) {
     let startPoint = [props.x, props.y];
     let endPoint = [props.x1, props.y1];
@@ -47,17 +45,23 @@ function JumpNode(props) {
     return (
         <svg>
             <defs>
-                <marker id="arrow" markerWidth="10" markerHeight="10" refX="3" refY="2" orient="auto" markerUnits="strokeWidth">
-                    <path d="M0,0 L0,4 L5,2 z" fill="grey" />
+                <marker
+                    id="arrow"
+                    markerWidth="10"
+                    markerHeight="10"
+                    refX="3"
+                    refY="2"
+                    orient="auto"
+                    markerUnits="strokeWidth"
+                >
+                    <path d="M0,0 L0,4 L5,2 z"
+                        fill="grey" />
                 </marker>
             </defs>
             <path
-                d={`
-                    M${startPoint}
-                    C${firstControlPoint} ${secondControlPoint} ${endPoint} 
-                `}
+                d={`M${startPoint} C${firstControlPoint} ${secondControlPoint} ${endPoint}`}
                 stroke="grey"
-                marker-end="url(#arrow)"
+                markerEnd="url(#arrow)"
                 fill="none"
             />
         </svg>
