@@ -1,6 +1,7 @@
 import React, { Fragment, useState } from 'react';
 
-import { Modal, Button, Segment, Header, Message } from 'semantic-ui-react';
+//import { Modal } from 'semantic-ui-react';
+import { Drawer, Modal } from 'antd';
 
 import Designer from './components/Designer';
 
@@ -17,21 +18,21 @@ function FormDesigner() {
                 onSelectItem={handleSelectItem}
             />
             {modal && <Modal
-                open
+                title="Form settings"
+                visible
+                onOk={handleModalClose}
+                onCancel={handleModalClose}
             >
-                <Modal.Header>Form settings</Modal.Header>
-                <Modal.Content>
-                    <p>Some settings</p>
-                </Modal.Content>
-                <Modal.Actions>
-                    <Button icon='close' content='Close' onClick={handleModalClose} />
-                </Modal.Actions>
+                <p>Some contents...</p>
             </Modal>}
-            {propertyData.id &&
-                <Segment style={{ position: "absolute", top: "50px", right: "50px", width: "200px", height: "500px" }}>
-                    <Header as='h3'>Settings</Header>
-                </Segment>
-            }
+            <Drawer
+                title="Node settings"
+                placement="right"
+                closable={false}
+                visible
+                mask={false}
+            >
+            </Drawer>
         </Fragment>
     );
 

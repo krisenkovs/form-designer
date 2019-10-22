@@ -1,0 +1,22 @@
+.panel{
+    position: absolute;
+    left: 20px;
+    top: 300px;
+    display: flex;
+    flex-direction: column;
+}
+
+.panel_item {
+    background: #607488bb;
+    margin-bottom: 10px;
+    user-select: none;
+    vertical-align: middle;
+}
+
+.panel_item:hover {
+    background: #607488ee;
+}
+
+.panel_item:active {
+    background: #607488ff;
+}
