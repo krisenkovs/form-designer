@@ -7,7 +7,7 @@ import Designer from './components/Designer';
 
 function FormDesigner() {
     const [modal, setModal] = useState(false);
-    const [propertyData, setPropertyData] = useState({});
+    //const [propertyData, setPropertyData] = useState({});
 
     return (
         <Fragment>
@@ -47,8 +47,7 @@ function FormDesigner() {
     }
 
     function handleSelectItem(data) {
-        console.log(data)
-        setPropertyData(data);
+        //setPropertyData(data);
     }
 }
 

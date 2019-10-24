@@ -55,7 +55,6 @@ const config = {
             radius: 25,
             color: "#f9ab40",
             label: "Step",
-            icon: "circle outline",
             panelShape: "circle",
             anchors: [
                 {
@@ -102,7 +101,6 @@ const config = {
             radius: 2,
             color: "#7a88a7",
             label: "Form",
-            icon: "stop",
             panelShape: "rectangle",
             anchors: [
                 {
