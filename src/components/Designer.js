@@ -14,7 +14,11 @@ class Designer extends Component {
         edges: {},
         selectedNode: {},
         dragableItem: {},
-        visibleAnchors: []
+        visibleAnchors: [],
+        scale: 0,
+        scaleRate: 1,
+        startX: 0,
+        startY: 0
     }
 
     componentDidMount() {
@@ -44,6 +48,8 @@ class Designer extends Component {
                     onMouseUp={this.handleOverMouseUp}
                     className="designer"
                     shapeRendering="geometricPrecision"
+                    viewBox={`${this.state.startX} ${this.state.startY} ${Number(this.props.height) + this.state.scale} ${Number(this.props.width) + this.state.scale}`}
+                    onWheel={this.handleWheel}
                 >
                     {Object.keys(this.state.edges).map((key, index) => {
                         const edge = this.state.edges[key];
@@ -107,19 +113,26 @@ class Designer extends Component {
         );
     }
 
+    handleWheel = (e) => {
+        const delta = this.state.scale + e.deltaY;
+        const scaleRate = (Number(this.props.height) + delta) / Number(this.props.height);
+
+        this.setState({ scale: delta, scaleRate: scaleRate, startX: e.pageX - e.pageX * scaleRate, startY: e.pageY - e.pageY * scaleRate });
+    }
+
     handleMouseMove = (e) => {
         const { dragableItem } = this.state;
 
         if (dragableItem.cx) {
-            const diffX = Math.trunc((e.pageX - dragableItem.cx) / 5);
-            const diffY = Math.trunc((e.pageY - dragableItem.cy) / 5);
+            const diffX = Math.trunc((e.pageX * this.state.scaleRate - dragableItem.cx) / 5);
+            const diffY = Math.trunc((e.pageY * this.state.scaleRate - dragableItem.cy) / 5);
 
             if (diffX === 0 && diffY === 0) {
                 return;
             }
 
-            const newcX = dragableItem.cx + diffX * 5
-            const newcY = dragableItem.cy + diffY * 5
+            let newcX = dragableItem.cx + diffX * 5
+            let newcY = dragableItem.cy + diffY * 5
 
             if (dragableItem.node === true) {
                 const newX = dragableItem.x + diffX * 5;
@@ -134,6 +147,24 @@ class Designer extends Component {
                         cx: newcX,
                         cy: newcY
                     }
+                });
+            }
+
+            if (dragableItem.canvas === true) {
+                newcX = e.pageX * this.state.scaleRate;
+                newcY = e.pageY * this.state.scaleRate;
+                const startX = this.state.startX + (dragableItem.cx - newcX);
+                const startY = this.state.startY + (dragableItem.cy - newcY);
+
+                this.setState({
+                    dragableItem: {
+                        ...dragableItem,
+                        dragable: true,
+                        cx: newcX,
+                        cy: newcY
+                    },
+                    startX: startX,
+                    startY: startY
                 });
             }
 
@@ -163,11 +194,13 @@ class Designer extends Component {
                 ...data,
                 dragable: false,
                 id: id,
-                cx: e.pageX,
-                cy: e.pageY,
+                cx: e.pageX * this.state.scaleRate,
+                cy: e.pageY * this.state.scaleRate,
+                x: e.pageX * this.state.scaleRate - data.width / 2,
+                y: e.pageY * this.state.scaleRate - data.height / 2,
                 node: true
             }
-        });
+        }, () => console.log(this.state));
     }
 
     handleMouseDown = (e, data) => {
@@ -181,8 +214,8 @@ class Designer extends Component {
             dragableItem: {
                 ...data,
                 dragable: false,
-                cx: e.pageX,
-                cy: e.pageY,
+                cx: e.pageX * this.state.scaleRate,
+                cy: e.pageY * this.state.scaleRate,
                 node: true
             },
             visibleAnchors: anchors
@@ -193,7 +226,7 @@ class Designer extends Component {
 
     handleAnchorMouseDown = (e, { id, index, x, y }) => {
         let anchors = [];
-        const { nodes, dragableItem, edges } = this.state;
+        const { nodes, edges } = this.state;
 
         let sX, sY, eX, eY, cX, cY, lId, lIndex, sNode;
 
@@ -201,8 +234,8 @@ class Designer extends Component {
         sY = y;
         eX = x;
         eY = y;
-        cX = e.pageX;
-        cY = e.pageY;
+        cX = e.pageX * this.state.scaleRate;
+        cY = e.pageY * this.state.scaleRate;
         lId = id;
         lIndex = index;
         sNode = id
@@ -323,8 +356,18 @@ class Designer extends Component {
         if (this.state.dragableItem.node) {
             this.handleOverMouseUp(e);
         } else {
-
-            this.setState({ selectedNode: null, selectedLine: null, visibleAnchors: [] });
+            this.setState({
+                dragableItem: {
+                    dragable: false,
+                    cx: e.pageX * this.state.scaleRate,
+                    cy: e.pageY * this.state.scaleRate,
+                    canvas: true
+                },
+                selectedNode: null,
+                selectedLine: null,
+                visibleAnchors: []
+            });
+            //this.setState({ selectedNode: null, selectedLine: null, visibleAnchors: [] });
             this.props.onSelectItem && this.props.onSelectItem({});
         }
     }

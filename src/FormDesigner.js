@@ -12,8 +12,8 @@ function FormDesigner() {
     return (
         <Fragment>
             <Designer
-                height="100%"
-                width="100%"
+                height={2000}
+                width={2000}
                 onItemDoubleClick={handleItemDoubleClick}
                 onSelectItem={handleSelectItem}
             />
