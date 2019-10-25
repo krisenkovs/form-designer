@@ -61,11 +61,31 @@ function JumpNode(props) {
             <path
                 d={`M${startPoint} C${firstControlPoint} ${secondControlPoint} ${endPoint}`}
                 stroke="grey"
+                strokeWidth={props.selected ? 2 : 1}
                 markerEnd="url(#arrow)"
                 fill="none"
+                onMouseDown={handleMouseDown}
             />
         </svg>
     )
+
+    function handleMouseDown(e) {
+        e.stopPropagation();
+
+        if (props.onMouseDown) {
+            props.onMouseDown(e, {
+                id: props.id,
+                x: props.x,
+                y: props.y,
+                height: props.height,
+                width: props.width,
+                targetId: props.targetId,
+                sourceId: props.sourceId,
+                targetIndex: props.targetIndex,
+                sourceIndex: props.sourceIndex
+            });
+        }
+    }
 }
 
 export default JumpNode;

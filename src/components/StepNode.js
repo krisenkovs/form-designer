@@ -8,17 +8,6 @@ function StepNode(props) {
     return (
         <g>
             <rect
-                x={props.x - 1}
-                y={props.y - 1}
-                rx={props.radius + 1}
-                ry={props.radius + 1}
-                width={props.width + 2}
-                height={props.height + 2}
-                fill={hover ? `${props.color}66` : "transparent"}
-                onMouseEnter={handleMouseEnter}
-                onMouseLeave={handleMouseLeave}
-            />
-            <rect
                 x={props.x}
                 y={props.y}
                 rx={props.radius}
@@ -50,8 +39,7 @@ function StepNode(props) {
 
             <g>
                 {props.anchors.map((anchor, index) => {
-                    if ((!props.dragItemType && (props.selected || hover) && anchor.out.length > 0) ||
-                        (props.dragAnchor && anchor.in.indexOf(props.dragItemType) !== -1)) {
+                    if ((hover && anchor.out.length > 0) || props.visibleAnchors.indexOf(`${props.id}:${index}`) !== -1) {
                         return (
                             <Anchor
                                 key={index}
@@ -76,9 +64,11 @@ function StepNode(props) {
 
         if (props.onMouseDown) {
             props.onMouseDown(e, {
-                ...props,
-                node: true,
-                anchor: false
+                id: props.id,
+                x: props.x,
+                y: props.y,
+                height: props.height,
+                width: props.width
             });
         }
     }
@@ -89,14 +79,10 @@ function StepNode(props) {
             const anchor = props.anchors[e.target.dataset.index];
 
             props.onAnchorMouseDown(e, {
-                ...props,
-                node: false,
-                anchor: true,
+                id: props.id,
                 index: e.target.dataset.index,
                 x: props.x + anchor.x,
-                y: props.y + anchor.y,
-                x1: props.x + anchor.x,
-                y1: props.y + anchor.y
+                y: props.y + anchor.y
             });
         }
     }
@@ -105,9 +91,7 @@ function StepNode(props) {
         e.stopPropagation();
         if (props.onAnchorMouseUp) {
             props.onAnchorMouseUp(e, {
-                ...props,
-                node: false,
-                anchor: true,
+                id: props.id,
                 index: e.target.dataset.index
             });
         }
@@ -131,7 +115,6 @@ function StepNode(props) {
             });
         }
     }
-
 }
 
 export default StepNode;

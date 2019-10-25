@@ -1,15 +1,14 @@
 import React from 'react';
 
+import { Avatar } from 'antd';
+
+import styless from './Item.module.css';
+
 const Item = (props) => {
     return (
-        <a className="item"
-            href="#"
-            onClick={handleItemClick}
-        >
-            <i className={`${props.icon} icon`} />
-            {props.label}
-        </a>
-
+        <Avatar className={styless.panel_item} size={56} onClick={handleItemClick}>
+            {props.label[0]}
+        </Avatar>
     )
 
     function handleItemClick(e) {
@@ -20,11 +19,7 @@ const Item = (props) => {
             props.onClick(e, {
                 ...props,
                 x: x - props.width / 2,
-                y: y - props.height / 2,
-                cx: x,
-                cy: y,
-                node: true,
-                anchor: false
+                y: y - props.height / 2
             });
         }
     }
