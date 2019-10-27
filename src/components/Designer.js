@@ -1,164 +1,102 @@
-import React, { Component, Fragment } from 'react';
+import React, { Fragment, useEffect, useState } from 'react';
 
 import StepNode from './StepNode';
 import JumpNode from './JumpNode';
 import DragableNode from './DragableNode';
 import DragableLine from './DragableLine';
-import ItemPanel from './ItemsPanel';
+import FlowButton from './FlowButton';
 
-import config from './itemsConfig'
+import config from './config';
+import useGlobal from '../Store';
 
-class Designer extends Component {
-    state = {
-        nodes: {},
-        edges: {},
-        selectedNode: {},
-        dragableItem: {},
-        visibleAnchors: [],
+const Designer = (props) => {
+    const [store, actions] = useGlobal((store) => {
+        return {
+            nodes: store.nodes,
+            lines: store.lines,
+            selectedNode: store.selectedNode,
+            selectedLine: store.selectedLine
+        }
+    }, (actions) => {
+        return {
+            addNode: actions.addNode,
+            addLine: actions.addLine,
+            setSelectedNode: actions.setSelectedNode,
+            setSelectedLine: actions.setSelectedLine,
+            deleteNode: actions.deleteNode,
+            deleteLine: actions.deleteLine
+        }
+    });
+
+    const [state, setState] = useState({
+        startX: 0,
+        startY: 0,
         scale: 0,
         scaleRate: 1,
-        startX: 0,
-        startY: 0
-    }
+        dragableItem: {}
+    });
 
-    componentDidMount() {
-        document.addEventListener('mousemove', this.handleMouseMove);
+    useEffect(() => {
+        document.addEventListener('mousemove', handleMouseMove);
+        return () => document.removeEventListener('mousemove', handleMouseMove);
+    });
 
-        let startNode = { ...config.nodes.startNode };
+    useEffect(() => {
+        actions.addNode({
+            type: "startNode",
+            height: 50,
+            width: 50,
+            label: "Start",
+            x: 50,
+            y: 50,
+            id: 1
+        });
+        // eslint-disable-next-line
+    }, []);
 
-        startNode.id = 1;
-        startNode.x = 150;
-        startNode.y = 70;
+    const handleWheel = (e) => {
+        const delta = state.scale + e.deltaY;
+        const scaleRate = (props.height + delta) / props.height;
 
-        this.setState({ nodes: { 1: startNode } });
-    }
+        setState({
+            ...state,
+            scale: delta,
+            scaleRate: scaleRate,
+            startX: e.pageX - e.pageX * scaleRate,
+            startY: e.pageY - e.pageY * scaleRate
+        });
+    };
 
-    componentWillUnmount() {
-        document.removeEventListener('mousemove', this.handleMouseMove);
-    }
+    const handleMouseMove = (e) => {
+        if (state.dragableItem.cx) {
+            const newcX = e.pageX * state.scaleRate;
+            const newcY = e.pageY * state.scaleRate;
+            const diffX = newcX - state.dragableItem.cx;
+            const diffY = newcY - state.dragableItem.cy;
+            let startX = state.startX;
+            let startY = state.startY;
+            let x = state.dragableItem.x;
+            let y = state.dragableItem.y;
 
-    render() {
-        return (
-            <Fragment>
-                <ItemPanel onItemClick={this.handleNewItemClick} />
-                <svg
-                    width={this.props.width}
-                    height={this.props.height}
-                    onMouseDown={this.handleOverMouseDown}
-                    onMouseUp={this.handleOverMouseUp}
-                    className="designer"
-                    shapeRendering="geometricPrecision"
-                    viewBox={`${this.state.startX} ${this.state.startY} ${Number(this.props.height) + this.state.scale} ${Number(this.props.width) + this.state.scale}`}
-                    onWheel={this.handleWheel}
-                >
-                    {Object.keys(this.state.edges).map((key, index) => {
-                        const edge = this.state.edges[key];
-                        let x, y, x1, y1, targetDirection, sourceDirection, anchor;
-
-                        anchor = this.state.nodes[edge.targetId].anchors[edge.targetIndex];
-                        x1 = this.state.nodes[edge.targetId].x + anchor.x;
-                        y1 = this.state.nodes[edge.targetId].y + anchor.y;
-                        targetDirection = anchor.direction;
-
-                        anchor = this.state.nodes[edge.sourceId].anchors[edge.sourceIndex];
-                        x = this.state.nodes[edge.sourceId].x + anchor.x;
-                        y = this.state.nodes[edge.sourceId].y + anchor.y;
-                        sourceDirection = anchor.direction;
-
-                        return (<JumpNode
-                            x={x}
-                            y={y}
-                            x1={x1}
-                            y1={y1}
-                            targetDirection={targetDirection}
-                            sourceDirection={sourceDirection}
-                            key={index}
-                            id={edge.id}
-                            {...edge}
-                            selected={this.state.selectedLine === edge.id}
-                            onMouseDown={this.handleLineMouseDown}
-                        />)
-                    })}
-                    {Object.keys(this.state.nodes).map((key, index) => {
-                        const node = this.state.nodes[key];
-
-                        return (
-                            <StepNode
-                                {...node}
-                                key={index}
-                                selected={node.id === this.state.selectedNode}
-                                onMouseDown={this.handleMouseDown}
-                                onAnchorMouseDown={this.handleAnchorMouseDown}
-                                onAnchorMouseUp={this.handleMouseUp}
-                                onItemDoubleClick={this.props.onItemDoubleClick}
-                                visibleAnchors={this.state.visibleAnchors}
-                                dragAnchor={this.state.dragableItem.anchor}
-                                dragItemType={this.state.dragableItem.nodeType}
-                            />
-                        )
-                    })}
-                    {(this.state.dragableItem.node && this.state.dragableItem.dragable) &&
-                        <DragableNode
-                            {...this.state.dragableItem}
-                        />
-                    }
-
-                    {(this.state.dragableItem.anchor && this.state.dragableItem.dragable) &&
-                        <DragableLine
-                            {...this.state.dragableItem}
-                        />
-                    }
-                </svg>
-            </Fragment>
-        );
-    }
-
-    handleWheel = (e) => {
-        const delta = this.state.scale + e.deltaY;
-        const scaleRate = (Number(this.props.height) + delta) / Number(this.props.height);
-
-        this.setState({ scale: delta, scaleRate: scaleRate, startX: e.pageX - e.pageX * scaleRate, startY: e.pageY - e.pageY * scaleRate });
-    }
-
-    handleMouseMove = (e) => {
-        const { dragableItem } = this.state;
-
-        if (dragableItem.cx) {
-            const diffX = Math.trunc((e.pageX * this.state.scaleRate - dragableItem.cx) / 5);
-            const diffY = Math.trunc((e.pageY * this.state.scaleRate - dragableItem.cy) / 5);
-
-            if (diffX === 0 && diffY === 0) {
-                return;
+            if (state.dragableItem.node === true) {
+                x = state.dragableItem.x + diffX;
+                y = state.dragableItem.y + diffY;
             }
 
-            let newcX = dragableItem.cx + diffX * 5
-            let newcY = dragableItem.cy + diffY * 5
-
-            if (dragableItem.node === true) {
-                const newX = dragableItem.x + diffX * 5;
-                const newY = dragableItem.y + diffY * 5;
-
-                this.setState({
-                    dragableItem: {
-                        ...dragableItem,
-                        x: newX,
-                        y: newY,
-                        dragable: true,
-                        cx: newcX,
-                        cy: newcY
-                    }
-                });
+            if (state.dragableItem.canvas === true) {
+                startX = state.startX + (state.dragableItem.cx - newcX);
+                startY = state.startY + (state.dragableItem.cy - newcY);
             }
 
-            if (dragableItem.canvas === true) {
-                newcX = e.pageX * this.state.scaleRate;
-                newcY = e.pageY * this.state.scaleRate;
-                const startX = this.state.startX + (dragableItem.cx - newcX);
-                const startY = this.state.startY + (dragableItem.cy - newcY);
-
-                this.setState({
+            if (state.dragableItem.node || state.dragableItem.anchor || state.dragableItem.canvas) {
+                setState({
+                    ...state,
                     dragableItem: {
-                        ...dragableItem,
+                        ...state.dragableItem,
+                        x1: state.dragableItem.x1 + diffX,
+                        y1: state.dragableItem.y1 + diffY,
+                        x: x,
+                        y: y,
                         dragable: true,
                         cx: newcX,
                         cy: newcY
@@ -167,232 +105,196 @@ class Designer extends Component {
                     startY: startY
                 });
             }
-
-            if (dragableItem.anchor === true) {
-                const newX = dragableItem.x1 + diffX * 5;
-                const newY = dragableItem.y1 + diffY * 5;
-
-                this.setState({
-                    dragableItem: {
-                        ...dragableItem,
-                        x1: newX,
-                        y1: newY,
-                        dragable: true,
-                        cx: newcX,
-                        cy: newcY
-                    }
-                })
-            }
         }
     }
 
-    handleNewItemClick = (e, data) => {
-        const id = Object.keys(this.state.nodes).length + 1;
+    const handleMouseDown = (e, data) => {
+        if (data.type !== "startNode") {
+            actions.setSelectedNode(data.id);
+        }
 
-        this.setState({
+        setState({
+            ...state,
             dragableItem: {
                 ...data,
                 dragable: false,
+                cx: e.pageX * state.scaleRate,
+                cy: e.pageY * state.scaleRate,
+                node: true
+            }
+        });
+    }
+
+    const handleAnchorMouseDown = (e, { id, index, x, y }) => {
+        setState({
+            ...state,
+            showNodeInAnchors: true,
+            dragableItem: {
                 id: id,
-                cx: e.pageX * this.state.scaleRate,
-                cy: e.pageY * this.state.scaleRate,
-                x: e.pageX * this.state.scaleRate - data.width / 2,
-                y: e.pageY * this.state.scaleRate - data.height / 2,
-                node: true
-            }
-        }, () => console.log(this.state));
-    }
-
-    handleMouseDown = (e, data) => {
-        let anchors = [];
-
-        anchors = this._showAnchors(anchors, data.id, null, null, "All");
-
-        this.setState({
-            selectedNode: data.id,
-            selectedLine: null,
-            dragableItem: {
-                ...data,
+                index: index,
                 dragable: false,
-                cx: e.pageX * this.state.scaleRate,
-                cy: e.pageY * this.state.scaleRate,
-                node: true
-            },
-            visibleAnchors: anchors
-        });
-
-        this.props.onSelectItem && this.props.onSelectItem(data);
-    }
-
-    handleAnchorMouseDown = (e, { id, index, x, y }) => {
-        let anchors = [];
-        const { nodes, edges } = this.state;
-
-        let sX, sY, eX, eY, cX, cY, lId, lIndex, sNode;
-
-        sX = x;
-        sY = y;
-        eX = x;
-        eY = y;
-        cX = e.pageX * this.state.scaleRate;
-        cY = e.pageY * this.state.scaleRate;
-        lId = id;
-        lIndex = index;
-        sNode = id
-
-        anchors = this._showAnchors(anchors, null, null, nodes[id].nodeType, null);
-
-        if (this.state.selectedLine) {
-            const edge = edges[this.state.selectedLine];
-
-            if (id === edge.targetId) {
-                anchors = this._showAnchors([], null, null, nodes[edge.sourceId].nodeType, null);
-
-                sX = nodes[edge.sourceId].anchors[edge.sourceIndex].x + nodes[edge.sourceId].x;
-                sY = nodes[edge.sourceId].anchors[edge.sourceIndex].y + nodes[edge.sourceId].y;
-                lId = edge.sourceId;
-                lIndex = edge.sourceIndex;
-            }
-
-            sNode = null;
-        }
-
-        this.setState({
-            selectedNode: sNode,
-            dragableItem: {
-                id: lId,
-                index: lIndex,
-                dragable: false,
-                cx: cX,
-                cy: cY,
-                x: sX,
-                y: sY,
-                x1: eX,
-                y1: eY,
+                cx: e.pageX * state.scaleRate,
+                cy: e.pageY * state.scaleRate,
+                x: x,
+                y: y,
+                x1: x,
+                y1: y,
                 anchor: true
-            },
-            visibleAnchors: anchors
-        });
-    }
-
-    handleLineMouseDown = (e, data) => {
-        let anchors = [];
-
-        anchors = this._showAnchors(anchors, data.targetId, data.targetIndex, null, null);
-
-        this.setState({
-            selectedLine: data.id,
-            visibleAnchors: anchors,
-            selectedNode: null
-        });
-    }
-
-    _showAnchors = (nodes, nodeId, index, inType, outType) => {
-        for (let key in this.state.nodes) {
-            const node = this.state.nodes[key];
-
-            if (!nodeId || String(key) === String(nodeId)) {
-                node.anchors.forEach((anchor, anchorIndex) => {
-                    if (String(index) === String(anchorIndex)) {
-                        nodes.push(`${key}:${anchorIndex}`);
-                        return;
-                    }
-
-                    if ((inType === "All" && anchor.in.length > 0) || anchor.in.indexOf(inType) !== -1) {
-                        nodes.push(`${key}:${anchorIndex}`);
-                        return;
-                    }
-
-                    if ((outType === "All" && anchor.out.length > 0) || anchor.out.indexOf(outType) !== -1) {
-                        nodes.push(`${key}:${anchorIndex}`);
-                        return;
-                    }
-                })
             }
-        }
-
-        return nodes;
+        });
     }
 
-    handleMouseUp = (e, { id, index }) => {
-        const { dragableItem } = this.state;
-        let edges = { ...this.state.edges }
-        let nodes = [];
+    const handleMouseUp = async (e, { id, index }) => {
+        const { dragableItem } = state;
 
-        if (this.state.selectedNode) {
-            nodes = this._showAnchors(nodes, dragableItem.id, null, null, "All");
-        }
-
-        if (this.state.selectedLine) {
-            nodes = this._showAnchors(nodes, id, index, null, null);
-        }
+        await setState({
+            ...state,
+            dragableItem: {},
+            showNodeInAnchors: false
+        });
 
         if (dragableItem.anchor === true) {
             let edgeId;
 
-            if (this.state.selectedLine) {
-                edgeId = this.state.selectedLine
+            if (state.selectedLine) {
+                edgeId = store.selectedLine;
             } else {
-                edgeId = Object.keys(this.state.edges).length + 1;
+                edgeId = Object.keys(store.lines).length + 1;
             }
 
-            edges[edgeId] = {
+            actions.addLine({
                 sourceId: dragableItem.id,
                 sourceIndex: dragableItem.index,
                 targetId: id,
                 targetIndex: index,
                 id: edgeId
-            };
+            });
         };
+    }
 
-        this.setState({
-            edges: edges,
-            dragableItem: {},
-            visibleAnchors: nodes
+    const handleOverMouseDown = async (e) => {
+        if (state.dragableItem.node) {
+            handleOverMouseUp(e);
+        } else {
+            setState({
+                ...state,
+                dragableItem: {
+                    dragable: false,
+                    cx: e.pageX * state.scaleRate,
+                    cy: e.pageY * state.scaleRate,
+                    canvas: true
+                },
+            });
+
+            actions.setSelectedNode(null);
+        }
+    }
+
+    const handleOverMouseUp = async (e) => {
+        await setState({ ...state, dragableItem: {}, showNodeInAnchors: false, });
+
+        if (state.dragableItem.node) {
+            actions.addNode({
+                id: state.dragableItem.id,
+                ...state.dragableItem
+            });
+        }
+    }
+
+    const handleDelItemClick = async (e) => {
+        if (store.selectedLine) {
+            actions.deleteLine(store.selectedLine);
+        }
+        if (store.selectedNode) {
+            actions.deleteNode(store.selectedNode);
+        }
+    }
+
+    const handleNewItemClick = (e) => {
+        const id = Object.keys(store.nodes).length + 1;
+        const node = config.nodes.stepNode;
+
+        setState({
+            ...state,
+            dragableItem: {
+                type: "stepNode",
+                label: node.label,
+                dragable: false,
+                height: node.height,
+                width: node.width,
+                id: id,
+                cx: e.pageX * state.scaleRate,
+                cy: e.pageY * state.scaleRate,
+                x: e.pageX * state.scaleRate - node.width / 2,
+                y: e.pageY * state.scaleRate - node.height / 2,
+                node: true
+            }
         });
     }
 
-    handleOverMouseDown = (e) => {
-        if (this.state.dragableItem.node) {
-            this.handleOverMouseUp(e);
-        } else {
-            this.setState({
-                dragableItem: {
-                    dragable: false,
-                    cx: e.pageX * this.state.scaleRate,
-                    cy: e.pageY * this.state.scaleRate,
-                    canvas: true
-                },
-                selectedNode: null,
-                selectedLine: null,
-                visibleAnchors: []
-            });
-            //this.setState({ selectedNode: null, selectedLine: null, visibleAnchors: [] });
-            this.props.onSelectItem && this.props.onSelectItem({});
-        }
+    const handleLineMouseDown = (e, data) => {
+        actions.setSelectedLine(data.id);
     }
 
-    handleOverMouseUp = (e) => {
-        const { dragableItem, selectedNode } = this.state;
-        let nodes = { ...this.state.nodes }
-        let anchors = this.state.visibleAnchors;
+    return (
+        <Fragment>
+            <FlowButton
+                bottom={30}
+                left={50}
+                disabled={false}
+                onClick={handleNewItemClick}
+                type="primary"
+                icon="plus" />
+            <FlowButton
+                bottom={30}
+                right={330}
+                disabled={!store.selectedNode && !store.selectedLine}
+                onClick={handleDelItemClick}
+                type="danger"
+                icon="delete" />
 
-        if (selectedNode) {
-            anchors = this._showAnchors([], selectedNode, null, null, "All");
-        }
+            <svg
+                width={props.width}
+                height={props.height}
+                onMouseDown={handleOverMouseDown}
+                onMouseUp={handleOverMouseUp}
+                className="designer"
+                shapeRendering="geometricPrecision"
+                viewBox={`${state.startX} ${state.startY} ${Number(props.height) + state.scale} ${Number(props.width) + state.scale}`}
+                onWheel={handleWheel}>
+                {Object.keys(store.lines).map((key, index) => {
+                    const line = store.lines[key];
 
-        if (dragableItem.node) {
-            let id = dragableItem.id;
+                    return (<JumpNode
+                        key={index}
+                        {...line}
+                        selected={store.selectedLine === line.id}
+                        onMouseDown={handleLineMouseDown} />
+                    )
+                })}
+                {Object.keys(store.nodes).map((key, index) => {
+                    const node = store.nodes[key];
 
-            if (!nodes[id]) {
-                nodes[id] = dragableItem;
-            }
-
-            nodes[id].x = dragableItem.x;
-            nodes[id].y = dragableItem.y;
-        }
-        this.setState({ dragableItem: {}, visibleAnchors: anchors, nodes: nodes });
-    }
+                    return (
+                        <StepNode
+                            {...node}
+                            key={index}
+                            selected={node.id === store.selectedNode}
+                            onMouseDown={handleMouseDown}
+                            onAnchorMouseDown={handleAnchorMouseDown}
+                            showInAnchors={state.showNodeInAnchors}
+                            onAnchorMouseUp={handleMouseUp} />
+                    )
+                })}
+                {(state.dragableItem.node && state.dragableItem.dragable) &&
+                    <DragableNode {...state.dragableItem} />
+                }
+                {(state.dragableItem.anchor && state.dragableItem.dragable) &&
+                    <DragableLine {...state.dragableItem} />
+                }
+            </svg>
+        </Fragment>
+    );
 }
 
 export default Designer;

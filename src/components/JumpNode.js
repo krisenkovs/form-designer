@@ -1,12 +1,36 @@
 import React from 'react';
 
-function JumpNode(props) {
-    let startPoint = [props.x, props.y];
-    let endPoint = [props.x1, props.y1];
-    let firstControlPoint = [props.x, props.y];
-    let secondControlPoint = [props.x1, props.y1];
+import config from './config';
+import useGlobal from '../Store';
 
-    switch (props.targetDirection) {
+function JumpNode(props) {
+    const [store] = useGlobal((store) => {
+        return {
+            nodes: store.nodes,
+            lines: store.lines
+        }
+    });
+
+    let x, y, x1, y1, targetDirection, sourceDirection, anchor, nodeType;
+
+    nodeType = store.nodes[props.targetId].type;
+    anchor = config.nodes[nodeType].anchors[props.targetIndex];
+    x1 = store.nodes[props.targetId].x + anchor.x;
+    y1 = store.nodes[props.targetId].y + anchor.y;
+    targetDirection = anchor.direction;
+
+    nodeType = store.nodes[props.sourceId].type;
+    anchor = config.nodes[nodeType].anchors[props.sourceIndex];
+    x = store.nodes[props.sourceId].x + anchor.x;
+    y = store.nodes[props.sourceId].y + anchor.y;
+    sourceDirection = anchor.direction;
+
+    let startPoint = [x, y];
+    let endPoint = [x1, y1];
+    let firstControlPoint = [x, y];
+    let secondControlPoint = [x1, y1];
+
+    switch (targetDirection) {
         case "left":
             secondControlPoint[0] = secondControlPoint[0] - 30;
             endPoint[0] = endPoint[0] - 2;
@@ -26,7 +50,7 @@ function JumpNode(props) {
         default: ;
     }
 
-    switch (props.sourceDirection) {
+    switch (sourceDirection) {
         case "left":
             firstControlPoint[0] = firstControlPoint[0] - 30;
             break;
@@ -60,13 +84,21 @@ function JumpNode(props) {
             </defs>
             <path
                 d={`M${startPoint} C${firstControlPoint} ${secondControlPoint} ${endPoint}`}
+                stroke="transparent"
+                strokeWidth={5}
+                fill="none"
+                onMouseDown={handleMouseDown}
+            />
+            <path
+                d={`M${startPoint} C${firstControlPoint} ${secondControlPoint} ${endPoint}`}
                 stroke="grey"
                 strokeWidth={props.selected ? 2 : 1}
                 markerEnd="url(#arrow)"
                 fill="none"
                 onMouseDown={handleMouseDown}
             />
-        </svg>
+        </svg >
+
     )
 
     function handleMouseDown(e) {
@@ -75,10 +107,8 @@ function JumpNode(props) {
         if (props.onMouseDown) {
             props.onMouseDown(e, {
                 id: props.id,
-                x: props.x,
-                y: props.y,
-                height: props.height,
-                width: props.width,
+                x: x,
+                y: y,
                 targetId: props.targetId,
                 sourceId: props.sourceId,
                 targetIndex: props.targetIndex,
