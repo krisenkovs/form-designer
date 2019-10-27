@@ -2,20 +2,24 @@ import React, { useState } from 'react';
 
 import Anchor from './Anchor';
 
+import config from './config';
+
 function StepNode(props) {
     const [hover, setHover] = useState(false);
+
+    const node = config.nodes[props.type];
 
     return (
         <g>
             <rect
                 x={props.x}
                 y={props.y}
-                rx={props.radius}
-                ry={props.radius}
-                width={props.width}
-                height={props.height}
-                stroke={props.color}
-                fill={props.selected ? `${props.color}44` : `${props.color}11`}
+                rx={node.radius}
+                ry={node.radius}
+                width={node.width}
+                height={node.height}
+                stroke={node.color}
+                fill={props.selected ? `${node.color}44` : `${node.color}11`}
                 strokeWidth={props.selected ? "2" : "1"}
                 data-id={props.id}
                 onMouseDown={handleMouseDown}
@@ -24,8 +28,8 @@ function StepNode(props) {
                 onDoubleClick={handleDoubleClick}
             />
             <text
-                x={props.x + props.width / 2}
-                y={props.y + props.height / 2}
+                x={props.x + node.width / 2}
+                y={props.y + node.height / 2}
                 dy="0.3em"
                 fill="#232c38"
                 fontSize="11px"
@@ -38,14 +42,14 @@ function StepNode(props) {
             > {props.label} </text>
 
             <g>
-                {props.anchors.map((anchor, index) => {
-                    if ((hover && anchor.out.length > 0) || props.visibleAnchors.indexOf(`${props.id}:${index}`) !== -1) {
+                {node.anchors.map((anchor, index) => {
+                    if (hover || (props.showInAnchors && anchor.in)) {
                         return (
                             <Anchor
                                 key={index}
                                 x={props.x + anchor.x}
                                 y={props.y + anchor.y}
-                                index={anchor.index}
+                                index={index}
                                 onMouseEnter={handleMouseEnter}
                                 onMouseLeave={handleMouseLeave}
                                 onMouseDown={handleAnchorMouseDown}
@@ -67,8 +71,10 @@ function StepNode(props) {
                 id: props.id,
                 x: props.x,
                 y: props.y,
-                height: props.height,
-                width: props.width
+                height: node.height,
+                width: node.width,
+                type: props.type,
+                label: props.label
             });
         }
     }
@@ -76,7 +82,7 @@ function StepNode(props) {
     function handleAnchorMouseDown(e) {
         e.stopPropagation();
         if (props.onAnchorMouseDown) {
-            const anchor = props.anchors[e.target.dataset.index];
+            const anchor = node.anchors[e.target.dataset.index];
 
             props.onAnchorMouseDown(e, {
                 id: props.id,

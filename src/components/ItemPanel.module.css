@@ -1,7 +1,0 @@
-.panel{
-    position: absolute;
-    left: 30px;
-    top: 30px;
-    display: flex;
-    flex-direction: column;
-}

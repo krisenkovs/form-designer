@@ -1,7 +1,7 @@
 import React, { Fragment, useState } from 'react';
 
 //import { Modal } from 'semantic-ui-react';
-import { Drawer, Modal } from 'antd';
+import { Drawer, Modal, Form, Input, Tooltip } from 'antd';
 
 import Designer from './components/Designer';
 
@@ -32,6 +32,20 @@ function FormDesigner() {
                 visible
                 mask={false}
             >
+                <Form >
+                    <Form.Item label="Наименование">
+                        <Input />
+
+                    </Form.Item>
+                    <Form.Item label="Описание">
+                        <Tooltip title="prompt text">
+
+                            <Input.TextArea rows={3} />
+
+                        </Tooltip>
+
+                    </Form.Item>
+                </Form>
             </Drawer>
         </Fragment>
     );
